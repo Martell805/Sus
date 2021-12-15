@@ -1,16 +1,28 @@
 import pygame.draw
 from pygame import sprite
+import json
 
 
 class Player(sprite.Sprite):
-    def __init__(self, player_info, *groups):
+    def __init__(self, id, x, y, color, angle, *groups):
         super().__init__(*groups)
+        self.id = id
+        self.x = x
+        self.y = y
+        self.angle = angle
+        self.color = color
+
+    def to_json(self):
+        return json.dumps(self).encode('utf-8')
+
+    def load(self, player_info):
+        player_info = json.load(player_info.decode('utf-8'))
+
         self.id = player_info['id']
-        self.adress = player_info['adress']
         self.x = player_info['x']
         self.y = player_info['y']
-        self.color = player_info['color']
-        self.angle = player_info['angle']
+        self.y = player_info['y']
+        self.y = player_info['y']
 
     def update(self, controls, *args, **kwargs):
         if controls['up']:
