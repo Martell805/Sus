@@ -12,6 +12,9 @@ class Player(sprite.Sprite):
         self.angle = angle
         self.color = color
 
+    def __repr__(self):
+        return f"Player {self.id}: ({self.x}, {self.y})"
+
     def to_json(self):
         return json.dumps(self).encode('utf-8')
 
@@ -21,8 +24,18 @@ class Player(sprite.Sprite):
         self.id = player_info['id']
         self.x = player_info['x']
         self.y = player_info['y']
-        self.y = player_info['y']
-        self.y = player_info['y']
+        self.angle = player_info['angle']
+        self.color = player_info['color']
+
+    @staticmethod
+    def create(player_info):
+        player_info = json.load(player_info.decode('utf-8'))
+
+        player = Player(player_info['id'],
+                        player_info['x'], player_info['y'],
+                        player_info['angle'], player_info['color'])
+
+        return player
 
     def update(self, controls, *args, **kwargs):
         if controls['up']:

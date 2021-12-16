@@ -9,14 +9,18 @@ from player import Player
 
 class Server:
     pygame.init()
+
     players = {}
     users = {}
     addresses = {}
     player_group = pygame.sprite.Group()
+
     server = socket.socket(
         socket.AF_INET,
         socket.SOCK_STREAM,
     )
+
+    clock = pygame.time.Clock()
 
     last_id = 0
 
@@ -41,6 +45,7 @@ class Server:
                 disconnected = True
 
     def check_for_connection(self):
+        print(124314)
         player_socket, address = self.server.accept()
 
         self.last_id += 1
@@ -63,6 +68,12 @@ class Server:
         self.server.listen()
 
         while True:
+            print(self.players)
             self.check_for_connection()
             self.send_all()
+            self.clock.tick(120)
 
+
+if __name__ == '__main__':
+    server = Server()
+    server.start("127.0.0.1", 1234)
