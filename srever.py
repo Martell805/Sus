@@ -1,4 +1,5 @@
 import json
+import random
 
 import pygame
 import socket
@@ -24,54 +25,67 @@ class Server:
 
     last_id = 0
 
-    def dumps_players(self):
-        return json.dumps(self.players).encode('utf-8')
+    def dumps_players(self) -> str:
+        players_info = {}
+        for id, player in self.players.items():
+            players_info[id] = player.to_json()
+        return json.dumps(players_info)
 
-    def send_all(self):
+    def send_all(self) -> None:
         data = self.dumps_players()
-        for user in self.users:
-            user.send(data)
+        for id, user in self.users.items():
+            user.send(data.encode("utf-8"))
 
-    def listen_player(self, id):
+    def listen_player(self, id: int) -> None:
         player = self.players[id]
         user = self.users[id]
         address = self.addresses[id]
-        disconnected = False
-        while not disconnected:
+        while True:
             try:
-                player[id].load(user.recv(2048))
+                player.update(user.recv(2048).decode("utf-8"))
             except ConnectionResetError:
+                del self.players[id]
+                del self.users[id]
+                del self.addresses[id]
+                player.kill()
                 print(f"Player {id} was disconnected")
-                disconnected = True
+                break
 
-    def check_for_connection(self):
-        print(124314)
-        player_socket, address = self.server.accept()
+    def check_for_connection(self) -> None:
+        while True:
+            player_socket, address = self.server.accept()
+            print(address)
 
-        self.last_id += 1
-        cur_player = Player(self.last_id, address, 0, 0, (255, 255, 255), self.player_group)
-        self.players[self.last_id] = cur_player
-        self.users[self.last_id] = player_socket
-        self.addresses[self.last_id] = address
+            self.last_id += 1
+            cur_player = Player(self.last_id, 200, 200, 0,
+                                (random.randint(50, 255), random.randint(50, 255), random.randint(50, 255)),
+                                self.player_group)
+            self.players[self.last_id] = cur_player
+            self.users[self.last_id] = player_socket
+            self.addresses[self.last_id] = address
 
-        print(f"{address} was connected")
+            print(f"{address} was connected")
 
-        player_socket.send(cur_player.to_json())
+            player_socket.send(cur_player.to_json().encode("utf-8"))
 
-        threading.Thread(
-            target=self.listen_player,
-            args=(self.last_id, )
-        ).start()
+            threading.Thread(
+                target=self.listen_player,
+                args=(self.last_id, )
+            ).start()
 
-    def start(self, ip, port):
+    def start(self, ip: str, port: int) -> None:
         self.server.bind((ip, port))
         self.server.listen()
 
+        threading.Thread(
+            target=self.check_for_connection,
+            args=()
+        ).start()
+
         while True:
-            print(self.players)
-            self.check_for_connection()
+            # print(self.players)
             self.send_all()
-            self.clock.tick(120)
+            self.clock.tick(60)
 
 
 if __name__ == '__main__':

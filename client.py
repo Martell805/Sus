@@ -22,16 +22,20 @@ class Client:
 
     def listen_server(self):
         while True:
-            data = json.load(self.client.recv(2048).decode("utf-8"))
-            for player_info in data:
-                if player_info['id'] == self.player.id:
+            print(self.client.recv(2048).decode("utf-8"))
+            data = json.loads(self.client.recv(2048).decode("utf-8"))
+            players = {}
+            # print(data)
+            for id, player_info in data.items():
+                if int(id) == self.player.id:
                     self.player.load(player_info)
                 else:
-                    self.players['id'].load(player_info)
+                    players[int(id)] = Player.create(player_info)
+            self.players = players
 
     def init_player(self):
-        data = self.client.recv(2048)
-        self.player = Player.create(data)
+        player_info = self.client.recv(2048)
+        self.player = Player.create(player_info.decode("utf-8"))
         self.player_group.add(self.player)
 
     def connect(self, ip, port):
@@ -50,18 +54,20 @@ class Client:
                 if event.type == pygame.QUIT:
                     exit()
 
-                data = json.dumps(
-                    {'up': pygame.key.get_pressed()[pygame.K_w],
-                     'down': pygame.key.get_pressed()[pygame.K_s],
-                     'left': pygame.key.get_pressed()[pygame.K_a],
-                     'right': pygame.key.get_pressed()[pygame.K_d], }
-                ).encode("utf-8")
+            data = json.dumps(
+                {'up': pygame.key.get_pressed()[pygame.K_w],
+                 'down': pygame.key.get_pressed()[pygame.K_s],
+                 'left': pygame.key.get_pressed()[pygame.K_a],
+                 'right': pygame.key.get_pressed()[pygame.K_d],
+                 }
+            ).encode("utf-8")
 
-                self.client.send(data)
+            self.client.send(data)
+
+            self.player.draw(self.screen)
 
             for id in self.players:
                 self.players[id].draw(self.screen)
-                self.player.draw(self.screen)
 
             pygame.display.flip()
             self.clock.tick(60)
@@ -73,4 +79,5 @@ class Client:
 
 if __name__ == '__main__':
     client = Client()
-    client.start("127.0.0.1", 1337)
+    client.start("127.0.0.1", 1234)
+
