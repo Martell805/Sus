@@ -10,6 +10,7 @@ class Client:
 
     screen = pygame.display.set_mode(RES)
     player_group = pygame.sprite.Group()
+    connected = False
     clock = pygame.time.Clock()
 
     player = None
@@ -21,11 +22,14 @@ class Client:
     players = {}
 
     def listen_server(self):
-        while True:
-            print(self.client.recv(2048).decode("utf-8"))
-            data = json.loads(self.client.recv(2048).decode("utf-8"))
+        while self.connected:
+            try:
+                data = json.loads(self.client.recv(2048).decode("utf-8"))
+            except json.decoder.JSONDecodeError as e:
+                print(e)
+                continue
+
             players = {}
-            # print(data)
             for id, player_info in data.items():
                 if int(id) == self.player.id:
                     self.player.load(player_info)
@@ -43,8 +47,8 @@ class Client:
 
         self.init_player()
 
-        listen_thread = Thread(target=self.listen_server)
-        listen_thread.start()
+        self.connected = True
+        Thread(target=self.listen_server).start()
 
     def run(self):
         while True:
@@ -52,6 +56,7 @@ class Client:
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    self.connected = False
                     exit()
 
             data = json.dumps(
@@ -64,10 +69,10 @@ class Client:
 
             self.client.send(data)
 
-            self.player.draw(self.screen)
-
             for id in self.players:
                 self.players[id].draw(self.screen)
+
+            self.player.draw(self.screen)
 
             pygame.display.flip()
             self.clock.tick(60)

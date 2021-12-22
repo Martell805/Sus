@@ -33,7 +33,8 @@ class Server:
 
     def send_all(self) -> None:
         data = self.dumps_players()
-        for id, user in self.users.items():
+        to_send = self.users.items()
+        for id, user in to_send:
             user.send(data.encode("utf-8"))
 
     def listen_player(self, id: int) -> None:
